@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+env/
+.pytest_cache/
+*.db
+*.sqlite3
+
+# Node / Expo / React
+node_modules/
+.expo/
+dist/
+build/
+web-build/
+*.log
+npm-debug.log*
+
+# Environment & Secrets
+.env
+.env.local
+.env.*.local
+
+# Storage & Model Caches
+backend/storage/uploads/*
+backend/storage/processed/*
+backend/storage/invoices/*
+!backend/storage/uploads/.gitkeep
+!backend/storage/processed/.gitkeep
+!backend/storage/invoices/.gitkeep
+hf_cache/
+.DS_Store
+Thumbs.db
+
+# CatBoost training logs & temp bundles
+catboost_info/
+dist_test/

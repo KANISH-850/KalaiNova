@@ -1,0 +1,14 @@
+{
+  "name": "kalainova-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "KALAINOVA - AI-Powered Artisan Commerce & Financial Empowerment Platform",
+  "scripts": {
+    "dev:backend": "cd backend && .\\.venv\\Scripts\\python.exe -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000",
+    "dev:mobile": "cd apps/mobile && npx expo start",
+    "dev:admin": "cd apps/admin && npm run dev",
+    "test:backend": "cd backend && .\\.venv\\Scripts\\python.exe -m pytest -v",
+    "test:mobile": "cd apps/mobile && npm test",
+    "build:admin": "cd apps/admin && npm run build"
+  }
+}

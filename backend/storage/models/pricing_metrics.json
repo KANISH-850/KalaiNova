@@ -1,0 +1,21 @@
+{
+  "dataset": "craft_pricing_dataset.csv",
+  "is_synthetic_prototype_data": true,
+  "train_samples": 960,
+  "test_samples": 240,
+  "xgboost": {
+    "mae": 146.58,
+    "rmse": 312.48,
+    "r2": 0.9895
+  },
+  "catboost": {
+    "mae": 131.79,
+    "rmse": 244.05,
+    "r2": 0.9936
+  },
+  "ensemble": {
+    "mae": 123.96,
+    "rmse": 265.3,
+    "r2": 0.9924
+  }
+}

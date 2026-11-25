@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "name": "KALAINOVA",
+    "slug": "kalainova",
+    "version": "1.0.0",
+    "scheme": "kalainova",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "plugins": [
+      "expo-router",
+      "expo-asset",
+      "expo-font"
+    ]
+  }
+}
