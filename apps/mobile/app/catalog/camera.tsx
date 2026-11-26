@@ -1,11 +1,19 @@
 import { useState } from "react";
-import { Alert, Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Image, ScrollView, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { COLORS } from "../../constants/theme";
+import { Camera, Image as ImageIcon } from "lucide-react-native";
+import { PALETTE, RADIUS, SPACING } from "../../constants/theme";
+import { useAuthStore } from "../../store/authStore";
+import { StepIndicator } from "../../components/StepIndicator";
+import { Header } from "../../components/Header";
+import { Button } from "../../components/Button";
+import { Card } from "../../components/Card";
+import { EmptyState } from "../../components/EmptyState";
 
 export default function ProductCameraScreen() {
   const router = useRouter();
+  const { language } = useAuthStore();
   const [imageUri, setImageUri] = useState<string | null>(null);
 
   const pickImage = async (fromCamera: boolean) => {
@@ -14,7 +22,7 @@ export default function ProductCameraScreen() {
       : await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (!perm.granted) {
-      Alert.alert("Permission Required", "Please allow camera/gallery access.");
+      Alert.alert("Permission needed", "Please allow camera or photo access to add your craft.");
       return;
     }
 
@@ -28,31 +36,53 @@ export default function ProductCameraScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 20 }}>
-      <Text style={{ fontSize: 20, fontWeight: "800", color: COLORS.deepNavy, marginBottom: 12 }}>
-        Capture or Upload Craft Photo
-      </Text>
+    <View style={{ flex: 1, backgroundColor: PALETTE.bg }}>
+      <ScrollView contentContainerStyle={{ padding: SPACING.sm, paddingBottom: 100 }}>
+        <StepIndicator currentStep={1} language={language} />
+        <Header
+          title="Take a photo of your craft"
+          subtitle="Use good daylight. We will clean the background in the next step."
+          speakText="Take a clear photo of your craft in daylight, or choose one from your phone gallery."
+          language={language}
+        />
 
-      <View style={{ flexDirection: "row", gap: 12, marginBottom: 18 }}>
-        <TouchableOpacity onPress={() => pickImage(true)} style={{ flex: 1, backgroundColor: COLORS.artisanOrange, padding: 16, borderRadius: 12, alignItems: "center" }}>
-          <Text style={{ color: "#fff", fontWeight: "700" }}>Open Camera</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => pickImage(false)} style={{ flex: 1, backgroundColor: COLORS.deepNavy, padding: 16, borderRadius: 12, alignItems: "center" }}>
-          <Text style={{ color: "#fff", fontWeight: "700" }}>Gallery Upload</Text>
-        </TouchableOpacity>
-      </View>
-
-      {imageUri && (
-        <View style={{ backgroundColor: "#fff", padding: 14, borderRadius: 14, borderWidth: 1, borderColor: COLORS.border }}>
-          <Image source={{ uri: imageUri }} style={{ width: "100%", height: 260, borderRadius: 12, marginBottom: 14 }} />
-          <TouchableOpacity
-            onPress={() => router.push({ pathname: "/catalog/studio", params: { imageUri } })}
-            style={{ backgroundColor: COLORS.teal, padding: 15, borderRadius: 12, alignItems: "center" }}
-          >
-            <Text style={{ color: "#fff", fontWeight: "800" }}>Open in AI Image Studio</Text>
-          </TouchableOpacity>
+        <View style={{ flexDirection: "row", gap: 8, marginBottom: SPACING.sm }}>
+          <Button
+            title="Camera"
+            variant="secondary"
+            icon={<Camera size={20} strokeWidth={1.75} color={PALETTE.primary} />}
+            onPress={() => pickImage(true)}
+            style={{ flex: 1 }}
+          />
+          <Button
+            title="Gallery"
+            variant="secondary"
+            icon={<ImageIcon size={20} strokeWidth={1.75} color={PALETTE.primary} />}
+            onPress={() => pickImage(false)}
+            style={{ flex: 1 }}
+          />
         </View>
-      )}
-    </ScrollView>
+
+        {imageUri ? (
+          <Card style={{ padding: 8 }}>
+            <Image source={{ uri: imageUri }} style={{ width: "100%", height: 280, borderRadius: RADIUS.control }} resizeMode="cover" />
+          </Card>
+        ) : (
+          <EmptyState
+            icon={<Camera size={32} strokeWidth={1.75} color={PALETTE.textSecondary} />}
+            message="No photo chosen yet. Tap Camera or Gallery above."
+          />
+        )}
+      </ScrollView>
+
+      <View style={{ padding: SPACING.sm, backgroundColor: PALETTE.bg, borderTopWidth: 1, borderTopColor: PALETTE.border }}>
+        <Button
+          title="Next: Clean Photo"
+          variant="primary"
+          disabled={!imageUri}
+          onPress={() => router.push({ pathname: "/catalog/studio", params: { imageUri: imageUri! } })}
+        />
+      </View>
+    </View>
   );
 }

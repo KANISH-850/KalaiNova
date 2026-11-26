@@ -1,21 +1,30 @@
 import { useState } from "react";
-import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, ScrollView, Text, View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import { COLORS } from "../../constants/theme";
+import { PALETTE, SPACING, TYPOGRAPHY } from "../../constants/theme";
 import { api } from "../../services/api";
+import { useAuthStore } from "../../store/authStore";
+import { StepIndicator } from "../../components/StepIndicator";
+import { Header } from "../../components/Header";
+import { Input } from "../../components/Input";
+import { Button } from "../../components/Button";
+import { Card } from "../../components/Card";
 
 export default function DynamicPricingScreen() {
   const { productId } = useLocalSearchParams<{ productId?: string }>();
+  const { language } = useAuthStore();
   const [category, setCategory] = useState("Handloom & Textiles");
-  const [materialCost, setMaterialCost] = useState("500");
-  const [labourCost, setLabourCost] = useState("300");
-  const [packagingCost, setPackagingCost] = useState("50");
-  const [otherCost, setOtherCost] = useState("50");
-  const [hours, setHours] = useState("10");
+  const [materialCost, setMaterialCost] = useState("3200");
+  const [labourCost, setLabourCost] = useState("2400");
+  const [packagingCost, setPackagingCost] = useState("150");
+  const [otherCost, setOtherCost] = useState("150");
+  const [hours, setHours] = useState("42");
   const [margin, setMargin] = useState("30");
   const [prediction, setPrediction] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
 
   const runPrediction = async () => {
+    setLoading(true);
     try {
       const res = await api.post("/ai/pricing/predict", {
         product_id: productId ? parseInt(productId, 10) : undefined,
@@ -29,7 +38,9 @@ export default function DynamicPricingScreen() {
       });
       setPrediction(res.data);
     } catch (err: any) {
-      Alert.alert("Pricing Error", err?.response?.data?.detail || err.message);
+      Alert.alert("Could not calculate price", err?.response?.data?.detail || err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -40,67 +51,56 @@ export default function DynamicPricingScreen() {
       product_id: productId ? parseInt(productId, 10) : undefined,
       accepted_price: prediction.recommended_price,
     });
-    Alert.alert("Price Accepted", `Applied ₹${prediction.recommended_price} to your product.`);
+    Alert.alert("Price saved", `₹${prediction.recommended_price.toLocaleString()} is now set for this craft.`);
   };
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 20 }}>
-      <Text style={{ fontSize: 20, fontWeight: "800", color: COLORS.deepNavy, marginBottom: 12 }}>
-        AI Dynamic Pricing (XGBoost + CatBoost)
-      </Text>
+    <View style={{ flex: 1, backgroundColor: PALETTE.bg }}>
+      <ScrollView contentContainerStyle={{ padding: SPACING.sm, paddingBottom: 100 }}>
+        <StepIndicator currentStep={4} language={language} />
+        <Header
+          title="Check a fair price"
+          subtitle="Enter what you spent on materials and labour. We will suggest a safe selling price."
+          speakText="Enter your material cost, labour cost, and hours worked to see a fair selling price."
+          language={language}
+        />
 
-      <Text style={{ fontWeight: "700", marginBottom: 4 }}>Category</Text>
-      <TextInput value={category} onChangeText={setCategory} style={{ backgroundColor: "#fff", padding: 12, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, marginBottom: 10 }} />
+        <Input label="Craft category" value={category} onChangeText={setCategory} />
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <View style={{ flex: 1 }}><Input label="Material (₹)" value={materialCost} onChangeText={setMaterialCost} keyboardType="numeric" /></View>
+          <View style={{ flex: 1 }}><Input label="Labour (₹)" value={labourCost} onChangeText={setLabourCost} keyboardType="numeric" /></View>
+        </View>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <View style={{ flex: 1 }}><Input label="Packing (₹)" value={packagingCost} onChangeText={setPackagingCost} keyboardType="numeric" /></View>
+          <View style={{ flex: 1 }}><Input label="Other (₹)" value={otherCost} onChangeText={setOtherCost} keyboardType="numeric" /></View>
+        </View>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <View style={{ flex: 1 }}><Input label="Hours worked" value={hours} onChangeText={setHours} keyboardType="numeric" /></View>
+          <View style={{ flex: 1 }}><Input label="Profit %" value={margin} onChangeText={setMargin} keyboardType="numeric" /></View>
+        </View>
 
-      <View style={{ flexDirection: "row", gap: 10, marginBottom: 10 }}>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontWeight: "700", marginBottom: 4 }}>Material (₹)</Text>
-          <TextInput value={materialCost} onChangeText={setMaterialCost} keyboardType="numeric" style={{ backgroundColor: "#fff", padding: 12, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border }} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontWeight: "700", marginBottom: 4 }}>Labour (₹)</Text>
-          <TextInput value={labourCost} onChangeText={setLabourCost} keyboardType="numeric" style={{ backgroundColor: "#fff", padding: 12, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border }} />
-        </View>
+        {prediction ? (
+          <Card style={{ marginTop: SPACING.xs, gap: 8 }}>
+            <Text style={{ fontFamily: TYPOGRAPHY.sansFamily, fontSize: 16, color: PALETTE.textSecondary }}>
+              Suggested selling price
+            </Text>
+            <Text style={{ fontFamily: TYPOGRAPHY.serifFamily, fontSize: 28, fontWeight: "700", color: PALETTE.primary }}>
+              ₹{prediction.recommended_price.toLocaleString()}
+            </Text>
+            <Text style={{ fontFamily: TYPOGRAPHY.sansFamily, fontSize: 16, color: PALETTE.text }}>
+              Your cost: ₹{prediction.total_production_cost.toLocaleString()} · Profit: ₹{prediction.expected_profit.toLocaleString()} ({prediction.profit_margin_pct}%)
+            </Text>
+            <Text style={{ fontFamily: TYPOGRAPHY.sansFamily, fontSize: 16, color: PALETTE.textSecondary }}>
+              Bulk / wholesale price: ₹{prediction.wholesale_price.toLocaleString()} · Minimum safe price: ₹{prediction.min_profitable_price.toLocaleString()}
+            </Text>
+            <Button title="Use this price" variant="accent" onPress={acceptPrice} style={{ marginTop: 8 }} />
+          </Card>
+        ) : null}
+      </ScrollView>
+
+      <View style={{ padding: SPACING.sm, backgroundColor: PALETTE.bg, borderTopWidth: 1, borderTopColor: PALETTE.border }}>
+        <Button title="Calculate fair price" variant="primary" loading={loading} onPress={runPrediction} />
       </View>
-
-      <View style={{ flexDirection: "row", gap: 10, marginBottom: 10 }}>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontWeight: "700", marginBottom: 4 }}>Packaging (₹)</Text>
-          <TextInput value={packagingCost} onChangeText={setPackagingCost} keyboardType="numeric" style={{ backgroundColor: "#fff", padding: 12, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border }} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontWeight: "700", marginBottom: 4 }}>Other (₹)</Text>
-          <TextInput value={otherCost} onChangeText={setOtherCost} keyboardType="numeric" style={{ backgroundColor: "#fff", padding: 12, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border }} />
-        </View>
-      </View>
-
-      <View style={{ flexDirection: "row", gap: 10, marginBottom: 16 }}>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontWeight: "700", marginBottom: 4 }}>Hours</Text>
-          <TextInput value={hours} onChangeText={setHours} keyboardType="numeric" style={{ backgroundColor: "#fff", padding: 12, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border }} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontWeight: "700", marginBottom: 4 }}>Desired Margin %</Text>
-          <TextInput value={margin} onChangeText={setMargin} keyboardType="numeric" style={{ backgroundColor: "#fff", padding: 12, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border }} />
-        </View>
-      </View>
-
-      <TouchableOpacity onPress={runPrediction} style={{ backgroundColor: COLORS.deepNavy, padding: 16, borderRadius: 12, alignItems: "center", marginBottom: 16 }}>
-        <Text style={{ color: "#fff", fontWeight: "800" }}>Predict Optimal Price</Text>
-      </TouchableOpacity>
-
-      {prediction && (
-        <View style={{ backgroundColor: "#fff", padding: 16, borderRadius: 14, borderWidth: 1, borderColor: COLORS.border, gap: 6 }}>
-          <Text style={{ fontSize: 18, fontWeight: "800", color: COLORS.teal }}>Recommended Price: ₹{prediction.recommended_price}</Text>
-          <Text>Production Cost: ₹{prediction.total_production_cost}</Text>
-          <Text>Min Profitable: ₹{prediction.min_profitable_price} | Wholesale: ₹{prediction.wholesale_price} | Retail: ₹{prediction.retail_price}</Text>
-          <Text>Expected Profit: ₹{prediction.expected_profit} ({prediction.profit_margin_pct}% margin)</Text>
-          <Text style={{ fontSize: 12, color: COLORS.mutedText, marginTop: 4 }}>{prediction.explanation}</Text>
-          <TouchableOpacity onPress={acceptPrice} style={{ backgroundColor: COLORS.artisanOrange, padding: 14, borderRadius: 10, alignItems: "center", marginTop: 10 }}>
-            <Text style={{ color: "#fff", fontWeight: "800" }}>Accept & Apply Price</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-    </ScrollView>
+    </View>
   );
 }

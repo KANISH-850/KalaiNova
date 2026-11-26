@@ -1,9 +1,13 @@
 import { useState } from "react";
-import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import * as Speech from "expo-speech";
-import { COLORS } from "../../constants/theme";
+import { PALETTE, SPACING } from "../../constants/theme";
 import { api } from "../../services/api";
+import { useAuthStore } from "../../store/authStore";
+import { StepIndicator } from "../../components/StepIndicator";
+import { Header } from "../../components/Header";
+import { Input } from "../../components/Input";
+import { Button } from "../../components/Button";
 
 export default function CatalogPreviewScreen() {
   const { catalogJson, transcript, imageUrl } = useLocalSearchParams<{
@@ -12,15 +16,18 @@ export default function CatalogPreviewScreen() {
     imageUrl?: string;
   }>();
   const router = useRouter();
+  const { language } = useAuthStore();
   const parsed = catalogJson ? JSON.parse(catalogJson) : {};
 
-  const [titleEn, setTitleEn] = useState(parsed.title_en || "Handcrafted Artisan Product");
+  const [titleEn, setTitleEn] = useState(parsed.title_en || "Handwoven Kanchipuram Silk Saree");
   const [descEn, setDescEn] = useState(parsed.description_en || "");
   const [titleHi, setTitleHi] = useState(parsed.title_hi || "");
   const [descHi, setDescHi] = useState(parsed.description_hi || "");
-  const [price, setPrice] = useState("1500");
+  const [price, setPrice] = useState("8500");
+  const [saving, setSaving] = useState(false);
 
   const saveProduct = async () => {
+    setSaving(true);
     try {
       const res = await api.post("/products", {
         title: titleEn,
@@ -36,40 +43,36 @@ export default function CatalogPreviewScreen() {
           { language_code: "hi", title: titleHi, description: descHi, keywords: parsed.keywords },
         ],
       });
-      Alert.alert("Saved", "Product added to your KalaiNova catalogue!");
+      Alert.alert("Saved", "Your craft is now in your shop.");
       router.replace({ pathname: "/pricing", params: { productId: String(res.data.id) } });
     } catch (err: any) {
-      Alert.alert("Save Failed", err?.response?.data?.detail || err.message);
+      Alert.alert("Could not save", err?.response?.data?.detail || err.message);
+    } finally {
+      setSaving(false);
     }
   };
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 20 }}>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-        <Text style={{ fontSize: 20, fontWeight: "800", color: COLORS.deepNavy }}>AI Catalogue Preview</Text>
-        <TouchableOpacity onPress={() => Speech.speak(`${titleEn}. ${descEn}`)} style={{ backgroundColor: COLORS.teal, padding: 10, borderRadius: 10 }}>
-          <Text style={{ color: "#fff", fontWeight: "700" }}>Read Aloud</Text>
-        </TouchableOpacity>
+    <View style={{ flex: 1, backgroundColor: PALETTE.bg }}>
+      <ScrollView contentContainerStyle={{ padding: SPACING.sm, paddingBottom: 100 }}>
+        <StepIndicator currentStep={5} language={language} />
+        <Header
+          title="Review and save craft"
+          subtitle="Check the title and description before saving to your shop."
+          speakText={`${titleEn}. ${descEn}`}
+          language={language}
+        />
+
+        <Input label="Product name (English)" value={titleEn} onChangeText={setTitleEn} />
+        <Input label="Description (English)" value={descEn} onChangeText={setDescEn} multiline style={{ minHeight: 84, textAlignVertical: "top" }} />
+        <Input label="Product name (Hindi)" value={titleHi} onChangeText={setTitleHi} />
+        <Input label="Description (Hindi)" value={descHi} onChangeText={setDescHi} multiline style={{ minHeight: 84, textAlignVertical: "top" }} />
+        <Input label="Starting price (₹)" value={price} onChangeText={setPrice} keyboardType="numeric" />
+      </ScrollView>
+
+      <View style={{ padding: SPACING.sm, backgroundColor: PALETTE.bg, borderTopWidth: 1, borderTopColor: PALETTE.border }}>
+        <Button title="Save & check fair price" variant="primary" loading={saving} onPress={saveProduct} />
       </View>
-
-      <Text style={{ fontWeight: "700", marginBottom: 4 }}>English Title</Text>
-      <TextInput value={titleEn} onChangeText={setTitleEn} style={{ backgroundColor: "#fff", padding: 12, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, marginBottom: 12 }} />
-
-      <Text style={{ fontWeight: "700", marginBottom: 4 }}>English Description</Text>
-      <TextInput value={descEn} onChangeText={setDescEn} multiline style={{ backgroundColor: "#fff", padding: 12, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, marginBottom: 12 }} />
-
-      <Text style={{ fontWeight: "700", marginBottom: 4 }}>Hindi Title (हिन्दी)</Text>
-      <TextInput value={titleHi} onChangeText={setTitleHi} style={{ backgroundColor: "#fff", padding: 12, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, marginBottom: 12 }} />
-
-      <Text style={{ fontWeight: "700", marginBottom: 4 }}>Hindi Description</Text>
-      <TextInput value={descHi} onChangeText={setDescHi} multiline style={{ backgroundColor: "#fff", padding: 12, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, marginBottom: 12 }} />
-
-      <Text style={{ fontWeight: "700", marginBottom: 4 }}>Initial Selling Price (₹)</Text>
-      <TextInput value={price} onChangeText={setPrice} keyboardType="numeric" style={{ backgroundColor: "#fff", padding: 12, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, marginBottom: 18 }} />
-
-      <TouchableOpacity onPress={saveProduct} style={{ backgroundColor: COLORS.artisanOrange, padding: 16, borderRadius: 14, alignItems: "center" }}>
-        <Text style={{ color: "#fff", fontWeight: "800", fontSize: 16 }}>Save & Get AI Price Recommendation</Text>
-      </TouchableOpacity>
-    </ScrollView>
+    </View>
   );
 }

@@ -1,35 +1,40 @@
 import { Stack } from "expo-router";
-import { COLORS } from "../constants/theme";
+import { PALETTE, TYPOGRAPHY } from "../constants/theme";
 
 export default function RootLayout() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: COLORS.deepNavy },
-        headerTintColor: COLORS.warmCream,
-        headerTitleStyle: { fontWeight: "700" },
-        contentStyle: { backgroundColor: COLORS.lightBg },
+        headerStyle: { backgroundColor: PALETTE.bg },
+        headerShadowVisible: false,
+        headerTintColor: PALETTE.text,
+        headerTitleStyle: {
+          fontFamily: TYPOGRAPHY.serifFamily,
+          fontWeight: "700",
+          fontSize: 20,
+        },
+        contentStyle: { backgroundColor: PALETTE.bg },
       }}
     >
       <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen name="(auth)/language" options={{ title: "Select Language" }} />
-      <Stack.Screen name="(auth)/login" options={{ title: "KALAINOVA Sign In" }} />
-      <Stack.Screen name="(auth)/onboarding" options={{ title: "Artisan Onboarding" }} />
+      <Stack.Screen name="(auth)/language" options={{ title: "Language" }} />
+      <Stack.Screen name="(auth)/login" options={{ headerShown: false }} />
+      <Stack.Screen name="(auth)/onboarding" options={{ title: "Shop Setup" }} />
       <Stack.Screen name="(artisan)" options={{ headerShown: false }} />
       <Stack.Screen name="(buyer)" options={{ headerShown: false }} />
-      <Stack.Screen name="catalog/camera" options={{ title: "Product Camera" }} />
-      <Stack.Screen name="catalog/studio" options={{ title: "AI Image Studio" }} />
-      <Stack.Screen name="catalog/voice" options={{ title: "Voice Cataloguing" }} />
-      <Stack.Screen name="catalog/preview" options={{ title: "AI Catalogue Preview" }} />
-      <Stack.Screen name="pricing/index" options={{ title: "AI Dynamic Pricing" }} />
-      <Stack.Screen name="finance/index" options={{ title: "Financial Dashboard" }} />
-      <Stack.Screen name="finance/ledger" options={{ title: "Digital Ledger" }} />
-      <Stack.Screen name="finance/invoices" options={{ title: "Smart Invoice Generator" }} />
-      <Stack.Screen name="finance/payments" options={{ title: "UPI & Payment Tracking" }} />
-      <Stack.Screen name="finance/assistance" options={{ title: "Financial Assistance" }} />
-      <Stack.Screen name="marketplace/index" options={{ title: "Craft Marketplace" }} />
-      <Stack.Screen name="marketplace/orders" options={{ title: "Order Management" }} />
-      <Stack.Screen name="assistant/index" options={{ title: "AI Business Assistant" }} />
+      <Stack.Screen name="catalog/camera" options={{ title: "Step 1: Photo" }} />
+      <Stack.Screen name="catalog/studio" options={{ title: "Step 2: Clean Photo" }} />
+      <Stack.Screen name="catalog/voice" options={{ title: "Step 3: Speak" }} />
+      <Stack.Screen name="catalog/preview" options={{ title: "Step 5: Save Craft" }} />
+      <Stack.Screen name="pricing/index" options={{ title: "Step 4: Fair Price" }} />
+      <Stack.Screen name="finance/index" options={{ title: "Money Book" }} />
+      <Stack.Screen name="finance/ledger" options={{ title: "Daily Ledger" }} />
+      <Stack.Screen name="finance/invoices" options={{ title: "Bills & Receipts" }} />
+      <Stack.Screen name="finance/payments" options={{ title: "UPI & Payments" }} />
+      <Stack.Screen name="finance/assistance" options={{ title: "Govt. Schemes" }} />
+      <Stack.Screen name="marketplace/index" options={{ title: "Craft Market" }} />
+      <Stack.Screen name="marketplace/orders" options={{ title: "Orders" }} />
+      <Stack.Screen name="assistant/index" options={{ title: "Shop Helper" }} />
     </Stack>
   );
 }

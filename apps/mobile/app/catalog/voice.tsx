@@ -1,10 +1,15 @@
 import { useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, ScrollView, View } from "react-native";
 import { Audio } from "expo-av";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { COLORS } from "../../constants/theme";
+import { Mic, Square } from "lucide-react-native";
+import { PALETTE, SPACING } from "../../constants/theme";
 import { api } from "../../services/api";
 import { useAuthStore } from "../../store/authStore";
+import { StepIndicator } from "../../components/StepIndicator";
+import { Header } from "../../components/Header";
+import { Input } from "../../components/Input";
+import { Button } from "../../components/Button";
 
 export default function VoiceCataloguingScreen() {
   const { imageUrl } = useLocalSearchParams<{ imageUrl?: string }>();
@@ -12,7 +17,7 @@ export default function VoiceCataloguingScreen() {
   const { language, user } = useAuthStore();
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [transcript, setTranscript] = useState(
-    "This is a handmade Kanchipuram silk saree with traditional zari work."
+    "Handwoven Kanchipuram pure silk saree with traditional temple zari border."
   );
   const [loading, setLoading] = useState(false);
 
@@ -34,7 +39,7 @@ export default function VoiceCataloguingScreen() {
           if (res.data.success) {
             setTranscript(res.data.transcript);
           } else {
-            Alert.alert("IndicConformer Status", res.data.error || "ASR model not enabled locally. You can edit the text directly.");
+            Alert.alert("Voice note", res.data.error || "Voice transcription is offline. You can type or edit below.");
           }
         }
       } else {
@@ -46,7 +51,7 @@ export default function VoiceCataloguingScreen() {
       }
     } catch (err: any) {
       setLoading(false);
-      Alert.alert("Audio Error", err.message);
+      Alert.alert("Microphone error", err.message);
     }
   };
 
@@ -57,7 +62,7 @@ export default function VoiceCataloguingScreen() {
       form.append("transcript", transcript);
       form.append("source_language", language);
       form.append("craft_category", user?.artisan_profile?.craft_category || "Handloom & Textiles");
-      form.append("artisan_location", user?.artisan_profile?.location || "India");
+      form.append("artisan_location", user?.artisan_profile?.location || "Kanchipuram, Tamil Nadu");
 
       const res = await api.post("/ai/catalog/generate", form, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -71,50 +76,49 @@ export default function VoiceCataloguingScreen() {
         },
       });
     } catch (err: any) {
-      Alert.alert("Catalogue Error", err?.response?.data?.detail || err.message);
+      Alert.alert("Could not prepare listing", err?.response?.data?.detail || err.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 20 }}>
-      <Text style={{ fontSize: 20, fontWeight: "800", color: COLORS.deepNavy, marginBottom: 8 }}>
-        Multilingual Voice Cataloguing ({language.toUpperCase()})
-      </Text>
-      <Text style={{ color: COLORS.mutedText, marginBottom: 16 }}>
-        Tap the microphone to record in Tamil, Hindi, Telugu, Kannada, Malayalam, or English.
-      </Text>
+    <View style={{ flex: 1, backgroundColor: PALETTE.bg }}>
+      <ScrollView contentContainerStyle={{ padding: SPACING.sm, paddingBottom: 100 }}>
+        <StepIndicator currentStep={3} language={language} />
+        <Header
+          title="Describe your craft"
+          subtitle="Tap the mic and speak in Tamil, Hindi, or English. We will write the listing for you."
+          speakText="Tap Start Speaking and describe your craft, material, and size."
+          language={language}
+        />
 
-      <TouchableOpacity
-        onPress={toggleRecording}
-        style={{
-          backgroundColor: recording ? COLORS.danger : COLORS.teal,
-          padding: 20,
-          borderRadius: 16,
-          alignItems: "center",
-          marginBottom: 18,
-        }}
-      >
-        <Text style={{ color: "#fff", fontWeight: "800", fontSize: 16 }}>
-          {recording ? "Stop Recording & Transcribe" : "Start Voice Recording"}
-        </Text>
-      </TouchableOpacity>
+        <Button
+          title={recording ? "Stop speaking" : "Start speaking"}
+          variant={recording ? "accent" : "secondary"}
+          icon={recording ? <Square size={20} strokeWidth={1.75} color={PALETTE.surface} /> : <Mic size={20} strokeWidth={1.75} color={PALETTE.primary} />}
+          onPress={toggleRecording}
+          style={{ marginBottom: SPACING.sm }}
+        />
 
-      <Text style={{ fontWeight: "700", marginBottom: 6 }}>Transcript / Product Description</Text>
-      <TextInput
-        value={transcript}
-        onChangeText={setTranscript}
-        multiline
-        numberOfLines={4}
-        style={{ backgroundColor: "#fff", padding: 14, borderRadius: 12, borderWidth: 1, borderColor: COLORS.border, minHeight: 100, textAlignVertical: "top", marginBottom: 16 }}
-      />
+        <Input
+          label="Your craft description"
+          value={transcript}
+          onChangeText={setTranscript}
+          multiline
+          numberOfLines={4}
+          style={{ minHeight: 110, textAlignVertical: "top" }}
+        />
+      </ScrollView>
 
-      {loading && <ActivityIndicator size="large" color={COLORS.artisanOrange} style={{ marginBottom: 12 }} />}
-
-      <TouchableOpacity onPress={generateCatalog} style={{ backgroundColor: COLORS.artisanOrange, padding: 16, borderRadius: 14, alignItems: "center" }}>
-        <Text style={{ color: "#fff", fontWeight: "800", fontSize: 16 }}>Generate Multilingual Catalogue</Text>
-      </TouchableOpacity>
-    </ScrollView>
+      <View style={{ padding: SPACING.sm, backgroundColor: PALETTE.bg, borderTopWidth: 1, borderTopColor: PALETTE.border }}>
+        <Button
+          title="Prepare listing"
+          variant="primary"
+          loading={loading}
+          onPress={generateCatalog}
+        />
+      </View>
+    </View>
   );
 }

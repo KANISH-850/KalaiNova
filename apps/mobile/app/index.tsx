@@ -1,32 +1,50 @@
 import { useEffect } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Text, View } from "react-native";
 import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { COLORS } from "../constants/theme";
+import { PALETTE, SPACING, TYPOGRAPHY } from "../constants/theme";
+import { KolamBorder } from "../components/KolamBorder";
 
 export default function SplashScreen() {
   const router = useRouter();
 
   useEffect(() => {
-    const t = setTimeout(() => router.replace("/(auth)/language"), 1200);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => router.replace("/(auth)/login"), 900);
+    return () => clearTimeout(timer);
   }, [router]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: COLORS.deepNavy, justifyContent: "center", alignItems: "center", padding: 28 }}>
-      <View style={{ width: 88, height: 88, borderRadius: 24, backgroundColor: COLORS.artisanOrange, justifyContent: "center", alignItems: "center", marginBottom: 20 }}>
-        <Ionicons name="sparkles" size={44} color={COLORS.warmCream} />
-      </View>
-      <Text style={{ fontSize: 34, fontWeight: "800", color: COLORS.warmCream, letterSpacing: 1.5 }}>KALAINOVA</Text>
-      <Text style={{ fontSize: 15, color: "#CBD5E1", textAlign: "center", marginTop: 10, lineHeight: 22 }}>
-        From Traditional Craftsmanship to Intelligent Digital Commerce
-      </Text>
-      <TouchableOpacity
-        onPress={() => router.replace("/(auth)/language")}
-        style={{ marginTop: 32, backgroundColor: COLORS.teal, paddingHorizontal: 28, paddingVertical: 14, borderRadius: 12 }}
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: PALETTE.bg,
+        justifyContent: "center",
+        alignItems: "center",
+        padding: SPACING.md,
+      }}
+    >
+      <KolamBorder width={240} />
+      <Text
+        style={{
+          fontFamily: TYPOGRAPHY.serifFamily,
+          fontSize: 32,
+          fontWeight: "700",
+          color: PALETTE.primary,
+          marginTop: SPACING.sm,
+        }}
       >
-        <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>Get Started</Text>
-      </TouchableOpacity>
+        கலைநோவா · KALAINOVA
+      </Text>
+      <Text
+        style={{
+          fontFamily: TYPOGRAPHY.sansFamily,
+          fontSize: TYPOGRAPHY.body.fontSize,
+          color: PALETTE.textSecondary,
+          textAlign: "center",
+          marginTop: SPACING.xs,
+        }}
+      >
+        கைவினைஞர் கடை & கணக்குப் புத்தகம்
+      </Text>
     </View>
   );
 }

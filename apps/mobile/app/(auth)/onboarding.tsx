@@ -1,23 +1,28 @@
 import { useState } from "react";
-import { Alert, ScrollView, Text, TextInput, TouchableOpacity } from "react-native";
+import { Alert, ScrollView, View } from "react-native";
 import { useRouter } from "expo-router";
-import { COLORS } from "../../constants/theme";
+import { PALETTE, SPACING } from "../../constants/theme";
 import { api } from "../../services/api";
 import { useAuthStore } from "../../store/authStore";
+import { Header } from "../../components/Header";
+import { Input } from "../../components/Input";
+import { Button } from "../../components/Button";
 
 export default function OnboardingScreen() {
   const router = useRouter();
-  const { refreshMe } = useAuthStore();
+  const { refreshMe, language } = useAuthStore();
   const [craftCategory, setCraftCategory] = useState("Handloom & Textiles");
   const [businessType, setBusinessType] = useState("Individual Artisan");
   const [location, setLocation] = useState("Kanchipuram, Tamil Nadu");
-  const [experienceYears, setExperienceYears] = useState("5");
+  const [experienceYears, setExperienceYears] = useState("10");
   const [upiId, setUpiId] = useState("");
   const [bankAccount, setBankAccount] = useState("");
   const [bankIfsc, setBankIfsc] = useState("");
   const [bankName, setBankName] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const saveProfile = async () => {
+    setSaving(true);
     try {
       await api.put("/auth/profile", {
         craft_category: craftCategory,
@@ -32,39 +37,35 @@ export default function OnboardingScreen() {
       await refreshMe();
       router.replace("/(artisan)");
     } catch (err: any) {
-      Alert.alert("Error", err?.response?.data?.detail || "Could not save profile");
+      Alert.alert("Could not save", err?.response?.data?.detail || "Please check your details and try again.");
+    } finally {
+      setSaving(false);
     }
   };
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 20, backgroundColor: COLORS.warmCream, flexGrow: 1 }}>
-      <Text style={{ fontSize: 22, fontWeight: "800", color: COLORS.deepNavy, marginBottom: 14 }}>Artisan Business Setup</Text>
+    <View style={{ flex: 1, backgroundColor: PALETTE.bg }}>
+      <ScrollView contentContainerStyle={{ padding: SPACING.sm, paddingBottom: 100 }}>
+        <Header
+          title="Set up your craft shop"
+          subtitle="Tell us what you make and where buyers can pay you."
+          speakText="Tell us what craft you make, your town, and your UPI ID for payments."
+          language={language}
+        />
 
-      <Text style={{ fontWeight: "700", marginBottom: 6 }}>Craft Category</Text>
-      <TextInput value={craftCategory} onChangeText={setCraftCategory} style={{ backgroundColor: "#fff", padding: 12, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, marginBottom: 12 }} />
+        <Input label="What do you craft?" value={craftCategory} onChangeText={setCraftCategory} />
+        <Input label="Shop type (Individual / SHG / Cooperative)" value={businessType} onChangeText={setBusinessType} />
+        <Input label="Town & District" value={location} onChangeText={setLocation} />
+        <Input label="Years of experience" value={experienceYears} onChangeText={setExperienceYears} keyboardType="numeric" />
+        <Input label="UPI ID (for receiving payments)" value={upiId} onChangeText={setUpiId} placeholder="kavitha@okaxis" />
+        <Input label="Bank account number (stored encrypted)" value={bankAccount} onChangeText={setBankAccount} secureTextEntry />
+        <Input label="IFSC code" value={bankIfsc} onChangeText={setBankIfsc} placeholder="IDIB000K012" />
+        <Input label="Bank name" value={bankName} onChangeText={setBankName} placeholder="Indian Bank" />
+      </ScrollView>
 
-      <Text style={{ fontWeight: "700", marginBottom: 6 }}>Business Type (Individual Artisan / SHG / Cooperative)</Text>
-      <TextInput value={businessType} onChangeText={setBusinessType} style={{ backgroundColor: "#fff", padding: 12, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, marginBottom: 12 }} />
-
-      <Text style={{ fontWeight: "700", marginBottom: 6 }}>Location</Text>
-      <TextInput value={location} onChangeText={setLocation} style={{ backgroundColor: "#fff", padding: 12, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, marginBottom: 12 }} />
-
-      <Text style={{ fontWeight: "700", marginBottom: 6 }}>Experience (Years)</Text>
-      <TextInput value={experienceYears} onChangeText={setExperienceYears} keyboardType="numeric" style={{ backgroundColor: "#fff", padding: 12, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, marginBottom: 12 }} />
-
-      <Text style={{ fontWeight: "700", marginBottom: 6 }}>UPI ID (for instant buyer payments)</Text>
-      <TextInput value={upiId} onChangeText={setUpiId} placeholder="name@okaxis" style={{ backgroundColor: "#fff", padding: 12, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, marginBottom: 12 }} />
-
-      <Text style={{ fontWeight: "700", marginBottom: 6 }}>Bank Account Number (Encrypted at rest)</Text>
-      <TextInput value={bankAccount} onChangeText={setBankAccount} secureTextEntry style={{ backgroundColor: "#fff", padding: 12, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, marginBottom: 12 }} />
-
-      <Text style={{ fontWeight: "700", marginBottom: 6 }}>IFSC Code & Bank Name</Text>
-      <TextInput value={bankIfsc} onChangeText={setBankIfsc} placeholder="IFSC" style={{ backgroundColor: "#fff", padding: 12, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, marginBottom: 8 }} />
-      <TextInput value={bankName} onChangeText={setBankName} placeholder="Bank Name" style={{ backgroundColor: "#fff", padding: 12, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, marginBottom: 20 }} />
-
-      <TouchableOpacity onPress={saveProfile} style={{ backgroundColor: COLORS.teal, padding: 16, borderRadius: 14, alignItems: "center" }}>
-        <Text style={{ color: "#fff", fontWeight: "800", fontSize: 16 }}>Complete Onboarding</Text>
-      </TouchableOpacity>
-    </ScrollView>
+      <View style={{ padding: SPACING.sm, backgroundColor: PALETTE.bg, borderTopWidth: 1, borderTopColor: PALETTE.border }}>
+        <Button title="Save shop details" onPress={saveProfile} loading={saving} variant="primary" />
+      </View>
+    </View>
   );
 }

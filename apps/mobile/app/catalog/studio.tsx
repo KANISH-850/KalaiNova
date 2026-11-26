@@ -1,18 +1,27 @@
 import { useState } from "react";
-import { ActivityIndicator, Alert, Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Alert, ScrollView, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { COLORS } from "../../constants/theme";
+import { Sparkles, Scissors } from "lucide-react-native";
+import { PALETTE, SPACING, TYPOGRAPHY } from "../../constants/theme";
 import { api, SERVER_ROOT } from "../../services/api";
+import { useAuthStore } from "../../store/authStore";
+import { StepIndicator } from "../../components/StepIndicator";
+import { Header } from "../../components/Header";
+import { Button } from "../../components/Button";
+import { Card } from "../../components/Card";
+import { Skeleton } from "../../components/Skeleton";
+import { BeforeAfterSlider } from "../../components/BeforeAfterSlider";
 
 export default function AIImageStudioScreen() {
   const { imageUri } = useLocalSearchParams<{ imageUri?: string }>();
   const router = useRouter();
+  const { language } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
 
   const processImage = async (removeBg: boolean) => {
     if (!imageUri) {
-      Alert.alert("No Image", "Please capture or select an image first.");
+      Alert.alert("Photo needed", "Please go back and pick a craft photo first.");
       return;
     }
     setLoading(true);
@@ -23,61 +32,72 @@ export default function AIImageStudioScreen() {
       const res = await api.post(endpoint, form, { headers: { "Content-Type": "multipart/form-data" } });
       setResult(res.data);
       if (removeBg && res.data.status === "unavailable") {
-        Alert.alert("BiRefNet Notice", res.data.error || "BiRefNet model unavailable; OpenCV enhancement applied.");
+        Alert.alert("Studio note", res.data.error || "Background removal model is offline; lighting enhancement applied.");
       }
     } catch (err: any) {
-      Alert.alert("Processing Failed", err?.response?.data?.detail || err.message);
+      Alert.alert("Could not process photo", err?.response?.data?.detail || err.message);
     } finally {
       setLoading(false);
     }
   };
 
+  const processedPath = result?.bg_removed_url || result?.enhanced_url;
+
   return (
-    <ScrollView contentContainerStyle={{ padding: 20 }}>
-      <Text style={{ fontSize: 20, fontWeight: "800", color: COLORS.deepNavy, marginBottom: 12 }}>
-        AI Image Studio (OpenCV + BiRefNet)
-      </Text>
+    <View style={{ flex: 1, backgroundColor: PALETTE.bg }}>
+      <ScrollView contentContainerStyle={{ padding: SPACING.sm, paddingBottom: 100 }}>
+        <StepIndicator currentStep={2} language={language} />
+        <Header
+          title="Clean your product photo"
+          subtitle="Improve lighting or remove the background. Drag the slider to compare."
+          speakText="Tap Improve Light or Remove Background, then slide across the photo to compare."
+          language={language}
+        />
 
-      <View style={{ flexDirection: "row", gap: 10, marginBottom: 16 }}>
-        <TouchableOpacity onPress={() => processImage(false)} style={{ flex: 1, backgroundColor: COLORS.deepNavy, padding: 14, borderRadius: 12, alignItems: "center" }}>
-          <Text style={{ color: "#fff", fontWeight: "700" }}>Enhance Lighting</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => processImage(true)} style={{ flex: 1, backgroundColor: COLORS.teal, padding: 14, borderRadius: 12, alignItems: "center" }}>
-          <Text style={{ color: "#fff", fontWeight: "700" }}>Remove Background</Text>
-        </TouchableOpacity>
-      </View>
-
-      {loading && <ActivityIndicator size="large" color={COLORS.artisanOrange} style={{ marginVertical: 20 }} />}
-
-      {result && (
-        <View style={{ backgroundColor: "#fff", padding: 14, borderRadius: 14, borderWidth: 1, borderColor: COLORS.border, gap: 12 }}>
-          <Text style={{ fontWeight: "700" }}>Before vs After Comparison</Text>
-          <View style={{ flexDirection: "row", gap: 10 }}>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 12, color: COLORS.mutedText, marginBottom: 4 }}>Original</Text>
-              <Image source={{ uri: `${SERVER_ROOT}${result.original_url}` }} style={{ width: "100%", height: 150, borderRadius: 10 }} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 12, color: COLORS.teal, marginBottom: 4 }}>Processed</Text>
-              <Image
-                source={{ uri: `${SERVER_ROOT}${result.bg_removed_url || result.enhanced_url}` }}
-                style={{ width: "100%", height: 150, borderRadius: 10, backgroundColor: "#F1F5F9" }}
-              />
-            </View>
-          </View>
-          <TouchableOpacity
-            onPress={() =>
-              router.push({
-                pathname: "/catalog/voice",
-                params: { imageUrl: result.bg_removed_url || result.enhanced_url || result.original_url },
-              })
-            }
-            style={{ backgroundColor: COLORS.artisanOrange, padding: 14, borderRadius: 12, alignItems: "center" }}
-          >
-            <Text style={{ color: "#fff", fontWeight: "800" }}>Use Image & Describe Product</Text>
-          </TouchableOpacity>
+        <View style={{ flexDirection: "row", gap: 8, marginBottom: SPACING.sm }}>
+          <Button
+            title="Improve light"
+            variant="secondary"
+            icon={<Sparkles size={18} strokeWidth={1.75} color={PALETTE.primary} />}
+            onPress={() => processImage(false)}
+            style={{ flex: 1 }}
+          />
+          <Button
+            title="Remove background"
+            variant="secondary"
+            icon={<Scissors size={18} strokeWidth={1.75} color={PALETTE.accent} />}
+            onPress={() => processImage(true)}
+            style={{ flex: 1 }}
+          />
         </View>
-      )}
-    </ScrollView>
+
+        {loading ? (
+          <Skeleton rows={3} />
+        ) : result && processedPath ? (
+          <Card>
+            <Text style={{ fontFamily: TYPOGRAPHY.sansFamily, fontSize: 16, fontWeight: "600", color: PALETTE.text, marginBottom: 8 }}>
+              Slide to compare Before & After
+            </Text>
+            <BeforeAfterSlider
+              beforeUri={`${SERVER_ROOT}${result.original_url}`}
+              afterUri={`${SERVER_ROOT}${processedPath}`}
+            />
+          </Card>
+        ) : null}
+      </ScrollView>
+
+      <View style={{ padding: SPACING.sm, backgroundColor: PALETTE.bg, borderTopWidth: 1, borderTopColor: PALETTE.border }}>
+        <Button
+          title="Next: Speak about craft"
+          variant="primary"
+          onPress={() =>
+            router.push({
+              pathname: "/catalog/voice",
+              params: { imageUrl: processedPath || result?.original_url || "" },
+            })
+          }
+        />
+      </View>
+    </View>
   );
 }
