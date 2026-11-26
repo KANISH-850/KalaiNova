@@ -1,40 +1,61 @@
 import { useEffect, useState } from "react";
 import { Image, ScrollView, Text, View } from "react-native";
-import { COLORS } from "../../constants/theme";
+import { QrCode } from "lucide-react-native";
+import { PALETTE, SPACING, TYPOGRAPHY } from "../../constants/theme";
 import { api } from "../../services/api";
+import { useAuthStore } from "../../store/authStore";
+import { Header } from "../../components/Header";
+import { Card } from "../../components/Card";
+import { ListItem } from "../../components/ListItem";
+import { EmptyState } from "../../components/EmptyState";
+import { Skeleton } from "../../components/Skeleton";
 
 export default function PaymentManagementScreen() {
+  const { language } = useAuthStore();
   const [qrData, setQrData] = useState<any>(null);
   const [payments, setPayments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get("/finance/payments/qr").then((r) => setQrData(r.data)).catch(() => {});
-    api.get("/finance/payments").then((r) => setPayments(r.data)).catch(() => {});
+    Promise.all([
+      api.get("/finance/payments/qr").then((r) => setQrData(r.data)).catch(() => {}),
+      api.get("/finance/payments").then((r) => setPayments(r.data)).catch(() => {}),
+    ]).finally(() => setLoading(false));
   }, []);
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 18 }}>
-      {qrData && (
-        <View style={{ backgroundColor: "#fff", padding: 20, borderRadius: 16, alignItems: "center", marginBottom: 16, borderWidth: 1, borderColor: COLORS.border }}>
-          <Text style={{ fontSize: 17, fontWeight: "800", color: COLORS.deepNavy, marginBottom: 8 }}>Artisan UPI QR Code</Text>
+    <ScrollView style={{ flex: 1, backgroundColor: PALETTE.bg }} contentContainerStyle={{ padding: SPACING.sm, paddingBottom: SPACING.lg }}>
+      <Header title="UPI & Payments" subtitle="Show this QR code to receive money directly." language={language} />
+
+      {qrData ? (
+        <Card style={{ alignItems: "center", marginBottom: SPACING.md }}>
           <Image source={{ uri: qrData.qr_data_url }} style={{ width: 180, height: 180 }} />
-          <Text style={{ marginTop: 8, fontWeight: "700", color: COLORS.teal }}>{qrData.upi_id}</Text>
+          <Text style={{ fontFamily: TYPOGRAPHY.sansFamily, fontSize: 16, fontWeight: "700", color: PALETTE.primary, marginTop: 8 }}>
+            {qrData.upi_id}
+          </Text>
+        </Card>
+      ) : null}
+
+      {loading ? (
+        <Skeleton rows={3} />
+      ) : payments.length === 0 ? (
+        <EmptyState
+          icon={<QrCode size={32} strokeWidth={1.75} color={PALETTE.textSecondary} />}
+          message="No payment records yet."
+        />
+      ) : (
+        <View style={{ borderRadius: 12, overflow: "hidden", borderWidth: 1, borderColor: PALETTE.border }}>
+          {payments.map((p) => (
+            <ListItem
+              key={p.id}
+              title={`Order #${p.order_id} (${p.payment_method})`}
+              subtitle={p.upi_reference ? `Ref: ${p.upi_reference}` : "Waiting for payment"}
+              rightText={`₹${p.amount.toLocaleString()}`}
+              rightColor={p.status === "paid" ? PALETTE.success : PALETTE.accent}
+            />
+          ))}
         </View>
       )}
-
-      <Text style={{ fontSize: 17, fontWeight: "800", marginBottom: 10 }}>Payment Records</Text>
-      {payments.map((p) => (
-        <View key={p.id} style={{ backgroundColor: "#fff", padding: 14, borderRadius: 12, marginBottom: 8, borderWidth: 1, borderColor: COLORS.border, flexDirection: "row", justifyContent: "space-between" }}>
-          <View>
-            <Text style={{ fontWeight: "700" }}>Order #{p.order_id} ({p.payment_method})</Text>
-            <Text style={{ fontSize: 12, color: COLORS.mutedText }}>Ref: {p.upi_reference || "Pending"}</Text>
-          </View>
-          <View style={{ alignItems: "flex-end" }}>
-            <Text style={{ fontWeight: "800" }}>₹{p.amount.toLocaleString()}</Text>
-            <Text style={{ fontSize: 12, color: p.status === "paid" ? COLORS.success : COLORS.artisanOrange, fontWeight: "700" }}>{p.status.toUpperCase()}</Text>
-          </View>
-        </View>
-      ))}
     </ScrollView>
   );
 }
