@@ -1,0 +1,15 @@
+export const ADMIN_THEME = {
+  bg: "#FAF6EF",
+  surface: "#FFFDF9",
+  surfaceAlt: "#F2ECE1",
+  primary: "#26336B",
+  accent: "#B5452F",
+  highlight: "#D9A21B",
+  text: "#2A2420",
+  textSecondary: "#6B5F55",
+  border: "#E3D9C8",
+  success: "#3F7D4E",
+  error: "#B33A2E",
+  serif: "'Fraunces', Georgia, serif",
+  sans: "'Inter', 'Noto Sans Tamil', system-ui, sans-serif",
+} as const;
